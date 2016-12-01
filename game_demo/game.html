@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Document</title>
+	<style>
+		#canvas{
+			border: 1px solid black;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas" width="512" height="480"></canvas>
+</body>
+<script>
+var canvas = document.querySelector("#canvas");
+var canvas_width = 512,canvas_height = 480;
+var ctx = canvas.getContext("2d");
+var monstersCaught = 0;
+// /*准备背景图片*/
+var bgReady = false;
+var bgImage = new Image();
+bgImage.onload = function(){
+	bgReady = true;
+};
+bgImage.src = "img/background.png";
+//准备英雄图片
+var heroReady = false;
+var heroImage = new Image();
+heroImage.onload = function(){
+	heroReady = true;
+};
+heroImage.src = "img/hero.png";
+//准备怪物图片
+var monsterReady = false;
+var monsterImage = new Image();
+monsterImage.onload = function(){
+	monsterReady = true;
+};
+monsterImage.src = "img/monster.png";
+//准备大怪
+var bigMonsterReady = false;
+var bigMonsterShow = false;
+var bigMonsterCreate = false;
+var bigMonsterDefeated = false;
+var bigMonsterImage = new Image();
+bigMonsterImage.onload = function(){
+	bigMonsterReady = true;
+};
+bigMonsterImage.src = "img/bigMonster.png";
+//准备剑
+var swordReady = false;
+var swordImage = new Image();
+swordImage.onload = function(){
+	swordReady = true;
+};
+swordImage.src = "img/sword.png";
+
+/*游戏对象*/
+var hero = {
+	speed:205,
+	x:0,
+	y:0
+}
+var monster = {
+	speed:200,
+	x:0,
+	y:0
+}
+var bigMonster = {
+	speed:120,
+	x:0,
+	y:0
+}
+/*处理用户输入*/
+var keysDown = {};
+addEventListener("keydown",function(e){
+	keysDown[e.keyCode] = true;
+},false/*冒泡阶段执行*/);
+addEventListener("keyup",function(e){
+	delete keysDown[e.keyCode];
+},false);
+/*开始一轮游戏*/
+//抓住一只怪物后开始新一轮游戏
+var resetMonster = function(){
+	//将怪物放在随机位置上
+	monster.x = 32 + (Math.random()*(canvas_width-94));
+	monster.y = 32 + (Math.random()*(canvas_height-94));
+}
+var resetBigMonster = function(){
+	bigMonster.x = 32;
+	bigMonster.y = 32;
+}
+/*更新对象*/
+//更新游戏对象的属性
+//小怪动作
+var monsterMoveX,monsterMoveY;
+//小怪AI
+function monsterAI(){
+	var distance = Math.sqrt((hero.x-monster.x)*(hero.x-monster.x)+(hero.y-monster.y)*(hero.y-monster.y));
+	if(distance>62 && distance < 90){
+		if(hero.x-monster.x > 0){
+			monsterMoveX = 0;
+		}
+		if(hero.x-monster.x < 0){
+			monsterMoveX = 1;
+		}
+		if(hero.y-monster.y > 0){
+			monsterMoveY = 0;
+		}
+		if(hero.y-monster.y < 0){
+			monsterMoveY = 1;
+		}
+	}
+}
+//怪物移动
+function monsterMove(monsterMoveX,monsterMoveY,modifier){
+	/*小怪*/
+	monsterAI();
+	//X方向
+	if(monsterMoveX >= 0.6){
+		if(monster.x >= canvas_width-62){
+			monster.x += 0;
+		}else{
+			monster.x += monster.speed * modifier;
+		}
+	}
+	if(monsterMoveX >0.3&&monsterMoveX < 0.6){
+		monster.x -= 0;
+	}
+	if(monsterMoveX <= 0.3){
+		if(monster.x <= 30){
+			monster.x -= 0;
+		}else{
+			monster.x -= monster.speed * modifier;
+		}
+	}
+	//Y方向
+	if(monsterMoveY >= 0.6){
+		if(monster.y >= canvas_height-62){
+			monster.y += 0;
+		}else{
+			monster.y += monster.speed * modifier;
+		}
+	}
+	if(monsterMoveY >0.3&&monsterMoveY < 0.6){
+		monster.y -= 0;
+	}
+	if(monsterMoveY <= 0.3){
+		if(monster.y <= 30){
+			monster.y -= 0;
+		}else{
+			monster.y -= monster.speed * modifier;
+		}
+	}
+	/*BOSS*/
+	bigMonsterAI(modifier);
+}
+//BOSS动作
+// BOSSAI
+function bigMonsterAI(modifier){
+	if(bigMonster.x - hero.x < 0){
+		bigMonster.x += bigMonster.speed * modifier;
+	}
+	if(bigMonster.x - hero.x > 0){
+		bigMonster.x -= bigMonster.speed * modifier;
+	}
+	if(bigMonster.y - hero.y < 0){
+		bigMonster.y += bigMonster.speed * modifier;
+	}
+	if(bigMonster.y - hero.y > 0){
+		bigMonster.y -= bigMonster.speed * modifier;
+	}
+}
+setInterval(function(){
+	monsterMoveX = Math.random();
+	monsterMoveY = Math.random();
+},500);
+	
+var update = function(modifier){
+	//小怪动作
+	monsterMove(monsterMoveX,monsterMoveY,modifier);
+	//英雄动作
+	if(38 in keysDown){//上
+		if(hero.y <= 30){
+			hero.y -= 0;
+		}else{
+			hero.y -= hero.speed * modifier;
+		}
+	}
+	if(40 in keysDown){//下
+		if(hero.y >= canvas_height-62){
+			hero.y += 0;
+		}else{
+			hero.y += hero.speed * modifier;
+		}
+	}
+	if(37 in keysDown){//左
+		if(hero.x <= 30){
+			hero.x -= 0;
+		}else{
+			hero.x -= hero.speed * modifier;
+		}
+	}
+	if(39 in keysDown){//右
+		if(hero.x >= canvas_width-62){
+			hero.x += 0;
+		}else{
+			hero.x += hero.speed * modifier;
+		}
+	}
+	//英雄与小怪碰到了
+	if(
+		hero.x <= (monster.x + 32)&&
+		monster.x <= (hero.x + 32)&&
+		hero.y <= (monster.y + 32)&&
+		monster.y <= (hero.y + 32)
+		){
+		monstersCaught++;
+		resetMonster();
+	}
+	//与大怪碰撞
+	if(
+		hero.x <= (bigMonster.x + 60)&&
+		bigMonster.x <= (hero.x + 32)&&
+		hero.y <= (bigMonster.y + 64)&&
+		bigMonster.y <= (hero.y + 32)
+		){
+		monstersCaught += 5;
+		// bigMonsterDefeated = true;
+	}
+}
+//渲染物体
+var renderMonster = function(){
+	if(bgReady){
+		ctx.drawImage(bgImage,0,0);
+	}
+	if(heroReady){
+		ctx.drawImage(heroImage,hero.x,hero.y);
+	}
+	if(monsterReady){
+		ctx.drawImage(monsterImage,monster.x,monster.y);
+	}
+	//计分
+	ctx.fillStyle = "rgb(250,250,250)";
+	ctx.font = "24px Microsoft YaHei";
+	ctx.textAlign = "left";
+	ctx.textBaseline = "top";
+	ctx.fillText("分数：" + monstersCaught,32,32);
+}
+function renderBigMonster(){
+	if(monstersCaught%4 == 0){
+		bigMonsterCreate = true;
+	}
+	if(bigMonsterReady&&monstersCaught != 0&&bigMonsterCreate == true){
+		if(bigMonsterDefeated == false){
+			ctx.drawImage(bigMonsterImage,bigMonster.x,bigMonster.y);
+		}
+	}
+}
+//主循环函数
+var main = function(){
+	var now = Date.now();
+	var delta = now - then;
+	update(delta/1000);
+	renderMonster();
+	renderBigMonster();
+	then = now;
+	//自执行
+	var w = window;
+	requestAnimationFrame = w.requestAnimationFrame||
+							w.webkitRequestAnimationFrame||
+							w.msRequestAnimationFrame||
+							w.mozRequestAnimationFrame;
+	requestAnimationFrame(main);
+}
+//开始游戏
+var then = Date.now();
+hero.x = canvas_width/2;
+hero.y = canvas_height/2;
+resetMonster();
+main();
+</script>
+</html>
